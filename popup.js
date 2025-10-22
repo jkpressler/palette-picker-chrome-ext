@@ -1,12 +1,15 @@
-document.getElementById("pickColor").addEventListener("click", async () => {
+const pickBtn = document.getElementById("pickColor");
+const clearBtn = document.getElementById("clearColors");
+const paletteContainer = document.getElementById("palette");
+
+pickBtn.addEventListener("click", async () => {
   try {
     const eyeDropper = new EyeDropper();
     const result = await eyeDropper.open();
     const color = result.sRGBHex;
 
-    // Save to storage
-    chrome.storage.local.get(["palette"], (result) => {
-      const palette = result.palette || [];
+    chrome.storage.local.get(["palette"], (data) => {
+      const palette = data.palette || [];
       palette.push(color);
       chrome.storage.local.set({ palette }, () => {
         renderPalette(palette);
@@ -17,16 +20,22 @@ document.getElementById("pickColor").addEventListener("click", async () => {
   }
 });
 
-// 🆕 Clear button handler
-document.getElementById("clearColors").addEventListener("click", () => {
+clearBtn.addEventListener("click", () => {
   chrome.storage.local.set({ palette: [] }, () => {
     renderPalette([]);
   });
 });
 
 function renderPalette(palette) {
-  const container = document.getElementById("palette");
-  container.innerHTML = "";
+  paletteContainer.innerHTML = "";
+
+  if (palette.length === 0) {
+    clearBtn.style.display = "none";
+    return;
+  } else {
+    clearBtn.style.display = "block";
+  }
+
   palette.forEach((color) => {
     const wrapper = document.createElement("div");
     wrapper.style.marginBottom = "10px";
@@ -43,11 +52,11 @@ function renderPalette(palette) {
 
     wrapper.appendChild(swatch);
     wrapper.appendChild(label);
-    container.appendChild(wrapper);
+    paletteContainer.appendChild(wrapper);
   });
 }
 
-// Load saved palette on open
-chrome.storage.local.get(["palette"], (result) => {
-  renderPalette(result.palette || []);
+// Load saved palette on popup open
+chrome.storage.local.get(["palette"], (data) => {
+  renderPalette(data.palette || []);
 });
